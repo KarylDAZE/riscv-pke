@@ -54,6 +54,20 @@ typedef struct elf_sect_header_t
   uint64 sh_entsize;
 } elf_sect_header;
 
+// symbal table section
+typedef struct symtab_t
+{
+  uint32 st_name;
+  unsigned char st_info;
+  unsigned char st_other;
+  uint16 st_shndx;
+  uint64 st_value;
+  uint64 st_size;
+} sym_tab;
+
+extern sym_tab symtab[100];
+extern char strtab[1000];
+
 #define ELF_MAGIC 0x464C457FU // "\x7FELF" in little endian
 #define ELF_PROG_LOAD 1
 

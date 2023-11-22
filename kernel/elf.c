@@ -14,6 +14,9 @@ typedef struct elf_info_t
   process *p;
 } elf_info;
 
+sym_tab symtab[100];
+char strtab[1000];
+
 //
 // the implementation of allocater. allocates memory space for later segment loading
 //
@@ -156,7 +159,7 @@ void load_bincode_from_host_elf(process *p)
 
   sprint("Application program entry point (virtual address): 0x%lx\n", p->trapframe->epc);
 
-  // print section header, string table, symbols table
+  // to find section header, string table, symbol table
   /*index:
   15-.symtab
   16-.strtab
@@ -164,14 +167,14 @@ void load_bincode_from_host_elf(process *p)
   */
   uint64 shtabOff = elfloader.ehdr.shoff;
   uint64 shstrtabHdrOff = elfloader.ehdr.shoff + elfloader.ehdr.shentsize * elfloader.ehdr.shstrndx;
-  elf_sect_header shstrtabHeader;
+  elf_sect_header shstrtabHeader, tmpHeader, symtabHeader, strtabHeader;
+  int i;
   elf_fpread(&elfloader, &shstrtabHeader, sizeof(elf_sect_header), shstrtabHdrOff);
   char shstrtab[shstrtabHeader.sh_size];
   elf_fpread(&elfloader, &shstrtab, sizeof(shstrtab), shstrtabHeader.sh_addr + shstrtabHeader.sh_offset);
 
-  elf_sect_header tmpHeader, symtabHeader, strtabHeader;
   // find .strtab .symtab
-  for (int i = 0; i < elfloader.ehdr.shnum; i++)
+  for (i = 0; i < elfloader.ehdr.shnum; i++)
   {
     elf_fpread(&elfloader, &tmpHeader, sizeof(elf_sect_header), elfloader.ehdr.shoff + elfloader.ehdr.shentsize * i);
     if (strcmp(shstrtab + tmpHeader.sh_name, ".symtab") == 0)
@@ -179,4 +182,8 @@ void load_bincode_from_host_elf(process *p)
     else if (strcmp(shstrtab + tmpHeader.sh_name, ".strtab") == 0)
       strtabHeader = tmpHeader;
   }
+  elf_fpread(&elfloader, &symtab, sizeof(symtab), symtabHeader.sh_addr + symtabHeader.sh_offset);
+  elf_fpread(&elfloader, &strtab, sizeof(strtab), strtabHeader.sh_addr + strtabHeader.sh_offset);
+
+  // strtab + sym[i].st_name
 }

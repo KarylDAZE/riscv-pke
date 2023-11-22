@@ -13,6 +13,7 @@
 
 #include "spike_interface/spike_utils.h"
 
+#include "elf.h"
 //
 // implement the SYS_user_print syscall
 //
@@ -38,9 +39,28 @@ ssize_t sys_user_exit(uint64 code)
 //
 ssize_t sys_user_print_backtrace(unsigned long backStep)
 {
-  sprint("sp:%x fp:%x ra:%x\n", (uint32)current->trapframe->regs.sp, (uint32)current->trapframe->regs.s0, (uint32)current->trapframe->regs.ra);
-  sprint("pre fp:%x\n", (uint32) * ((uint64 *)(current->trapframe->regs.s0 - 8)));
-  sprint("ppre fp:%x\n", (uint32) * ((uint64 *)(*(uint64 *)(current->trapframe->regs.s0 - 8)) - 2));
+  uint64 fp = current->trapframe->regs.s0 + 8, ra = current->trapframe->regs.ra;
+  int lenToFunc, lenToFuncMin = INT32_MAX, i, minI;
+  char funcName[100];
+  do
+  {
+    fp = *(uint64 *)(fp - 16);
+    ra = *(uint64 *)(fp - 8);
+    // find in which func is ra
+    for (i = 0, lenToFuncMin = INT32_MAX; i < 100; i++)
+    {
+      lenToFunc = ra - symtab[i].st_value;
+      if ((symtab[i].st_info & 0xf) == 2 && lenToFunc > 0 && lenToFunc < lenToFuncMin) // symtab[i].st_info&0xf==2 means symbal type is func
+      {
+        lenToFuncMin = lenToFunc;
+        minI = i;
+      }
+    }
+    strcpy(funcName, strtab + symtab[minI].st_name);
+    // sprint("ra:%x\n", (uint32)ra);
+    sprint("%s\n", funcName);
+    backStep--;
+  } while (strcmp(funcName, "main") != 0 && backStep > 0);
   return 0;
 }
 
