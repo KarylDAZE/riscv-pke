@@ -61,11 +61,15 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval)
     // dynamically increase application stack.
     // hint: first allocate a new physical page, and then, maps the new page to the
     // virtual address that causes the page fault.
-    if (stval < USER_STACK_TOP)
+    if (stval < USER_STACK_TOP && stval >= USER_FREE_ADDRESS_END)
     {
       void *pa = alloc_page();
       // sprint("%llx,%llx\n", stval, (uint64)pa);
       map_pages(current->pagetable, stval & 0xfffffffff000, PGSIZE, (uint64)pa, prot_to_type(PROT_READ | PROT_WRITE, 1));
+    }
+    else if (stval >= g_ufree_page && stval < USER_FREE_ADDRESS_END)
+    {
+      panic("this address is not available!");
     }
     break;
   default:
