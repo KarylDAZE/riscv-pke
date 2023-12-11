@@ -105,6 +105,27 @@ ssize_t sys_user_yield()
 }
 
 //
+// kerenl entry point of wait.
+//
+int sys_user_wait(uint64 pid)
+{
+  if (-1 == pid)
+  {
+    current->pid_wait = -1;
+  }
+  else if (pid >= 0 && pid < NPROC && procs[pid].parent == current)
+  {
+    current->pid_wait = pid;
+  }
+  else
+  {
+    return -1;
+  }
+  current->status = BLOCKED;
+  schedule();
+}
+
+//
 // [a0]: the syscall number; [a1] ... [a7]: arguments to the syscalls.
 // returns the code of success, (e.g., 0 means success, fail for otherwise)
 //
@@ -125,6 +146,8 @@ long do_syscall(long a0, long a1, long a2, long a3, long a4, long a5, long a6, l
     return sys_user_fork();
   case SYS_user_yield:
     return sys_user_yield();
+  case SYS_user_wait:
+    return sys_user_wait(a1);
   default:
     panic("Unknown syscall %ld \n", a0);
   }
