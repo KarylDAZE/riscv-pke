@@ -58,8 +58,7 @@ void schedule()
       if ((procs[i].status != FREE) && (procs[i].status != ZOMBIE))
       {
         should_shutdown = 0;
-        sprint("ready queue empty, but process %d is not in free/zombie state:%d\n",
-               i, procs[i].status);
+        // sprint("ready queue empty, but process %d is not in free/zombie state:%d\n",i, procs[i].status);
       }
 
     if (should_shutdown)
@@ -69,7 +68,15 @@ void schedule()
     }
     else
     {
-      // panic( "Not handled: we should let system wait for unfinished processes.\n" );
+      for (int i = 0; i < NPROC; i++)
+      {
+        if (procs[i].parent && procs[i].parent->status == BLOCKED && procs[i].status == ZOMBIE && (procs[i].parent->pid_wait == procs[i].pid || procs[i].parent->pid_wait == -1))
+        {
+          insert_to_ready_queue(procs[i].parent);
+          if (procs[i].parent->pid_wait == -1)
+            procs[i].parent->pid_wait = procs[i].pid;
+        }
+      }
     }
   }
 

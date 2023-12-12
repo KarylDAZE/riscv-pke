@@ -109,20 +109,23 @@ ssize_t sys_user_yield()
 //
 int sys_user_wait(uint64 pid)
 {
+  process *parent = current;
   if (-1 == pid)
   {
     current->pid_wait = -1;
+    current->status = BLOCKED;
   }
   else if (pid >= 0 && pid < NPROC && procs[pid].parent == current)
   {
     current->pid_wait = pid;
+    current->status = BLOCKED;
   }
   else
   {
     return -1;
   }
-  current->status = BLOCKED;
   schedule();
+  return parent->pid_wait;
 }
 
 //

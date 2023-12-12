@@ -250,6 +250,23 @@ int do_fork(process *parent)
       child->mapped_info[child->total_mapped_region].seg_type = CODE_SEGMENT;
       child->total_mapped_region++;
       break;
+    case DATA_SEGMENT:
+      for (int j = 0; j < parent->mapped_info[DATA_SEGMENT].npages; j++)
+      {
+        void *child_pa = alloc_page();
+        memcpy(child_pa, (void *)lookup_pa(parent->pagetable, parent->mapped_info[DATA_SEGMENT].va + j * PGSIZE), PGSIZE);
+        user_vm_map((pagetable_t)child->pagetable, parent->mapped_info[DATA_SEGMENT].va + j * PGSIZE, PGSIZE, (uint64)child_pa,
+                    prot_to_type(PROT_WRITE | PROT_READ, 1));
+      }
+      child->mapped_info[child->total_mapped_region].va = parent->mapped_info[i].va;
+      child->mapped_info[child->total_mapped_region].npages =
+          parent->mapped_info[i].npages;
+      child->mapped_info[child->total_mapped_region].seg_type = DATA_SEGMENT;
+      child->total_mapped_region++;
+
+      // sprint("%d %d\n", child->mapped_info[DATA_SEGMENT].seg_type, parent->total_mapped_region);
+      // sprint("%d %llx %llx\n", child->mapped_info[DATA_SEGMENT].npages, lookup_pa(child->pagetable, child->mapped_info[DATA_SEGMENT].va), lookup_pa(parent->pagetable, parent->mapped_info[i].va));
+      break;
     }
   }
 

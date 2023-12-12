@@ -88,7 +88,7 @@ void yield()
 // lib call to wait
 //
 
-void wait(uint64 pid)
+void wait(unsigned long long pid)
 {
   do_user_call(SYS_user_wait, pid, 0, 0, 0, 0, 0, 0);
 }
