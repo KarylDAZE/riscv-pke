@@ -258,11 +258,31 @@ int do_unlink(char *path)
 //
 int do_rcwd(char *path)
 {
+  char path_copy[MAX_PATH_LEN];
+  struct dentry *parent = current->pfiles->cwd;
+  strcpy(path, "");
+  while (parent != 0)
+  {
+    strcpy(path_copy, "");
+    if (!((parent->parent && strcmp(parent->parent->name, "/") == 0) || parent->parent == NULL))
+    {
+      strcpy(path_copy, "/");
+    }
+    strcat(path_copy, parent->name);
+    strcat(path_copy, path);
+    strcpy(path, path_copy);
+    parent = parent->parent;
+  }
+  // return vfs_rcwd(path);
+  return 0;
 }
 
 //
 // change current path to char* path
 //
-int do_ccwd(char *path)
+int do_ccwd(const char *path)
 {
+  char miss_name[MAX_PATH_LEN];
+  current->pfiles->cwd = lookup_final_dentry(path, &vfs_root_dentry, miss_name);
+  return 0;
 }

@@ -242,14 +242,24 @@ ssize_t sys_user_unlink(char *vfn)
   return do_unlink(pfn);
 }
 
+//
+// lib call to rcwd
+//
 ssize_t sys_user_rcwd(char *path)
 {
-  return do_rcwd(path);
+  char *pfn = (char *)user_va_to_pa((pagetable_t)(current->pagetable), (void *)path);
+  return do_rcwd(pfn);
 }
 
+//
+// lib call to ccwd
+//
 ssize_t sys_user_ccwd(const char *path)
 {
-  return do_ccwd(path);
+  char *pfn = (char *)user_va_to_pa((pagetable_t)(current->pagetable), (void *)path);
+  // sprint("%x\n", pfn);
+  return do_ccwd(pfn);
+  // return 0;
 }
 
 //
