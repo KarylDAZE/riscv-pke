@@ -2,13 +2,19 @@
 #include "kernel/process.h"
 #include "spike_interface/spike_utils.h"
 
+static void print_errorline();
+
 static void handle_instruction_access_fault() { panic("Instruction access fault!"); }
 
 static void handle_load_access_fault() { panic("Load access fault!"); }
 
 static void handle_store_access_fault() { panic("Store/AMO access fault!"); }
 
-static void handle_illegal_instruction() { panic("Illegal instruction!"); }
+static void handle_illegal_instruction()
+{
+  print_errorline();
+  panic("Illegal instruction!");
+}
 
 static void handle_misaligned_load() { panic("Misaligned Load!"); }
 
@@ -47,7 +53,7 @@ void handle_mtrap()
   case CAUSE_ILLEGAL_INSTRUCTION:
     // TODO (lab1_2): call handle_illegal_instruction to implement illegal instruction
     // interception, and finish lab1_2.
-    panic("call handle_illegal_instruction to accomplish illegal instruction interception for lab1_2.\n");
+
     handle_illegal_instruction();
     break;
   case CAUSE_MISALIGNED_LOAD:
@@ -63,4 +69,10 @@ void handle_mtrap()
     panic("unexpected exception happened in M-mode.\n");
     break;
   }
+}
+
+static void print_errorline()
+{
+
+  sprint("dir:%s\nline:%x %d %d\nfile:%s\n", current->dir[current->file[0].dir], current->line[0].addr, current->line[0].file, current->line[0].line, current->file[0].file);
 }
