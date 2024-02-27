@@ -14,6 +14,8 @@ typedef struct elf_info_t
     process *p;
 } elf_info;
 
+char debug_section[10000];
+
 //
 // the implementation of allocater. allocates memory space for later segment loading
 //
@@ -395,10 +397,9 @@ void load_bincode_from_host_elf(process *p)
             debugLineHeader = tmpHeader;
     }
 
-    char debug_section[debugHdr.length + 64 * 3];
-    elf_fpread(&elfloader, &debugHdr, sizeof(debugHdr), debugLineHeader.addr + debugLineHeader.offset);
-    elf_fpread(&elfloader, &debug_section, debugHdr.length, debugLineHeader.addr + debugLineHeader.offset);
+    elf_fpread(&elfloader, &debug_section, debugLineHeader.size, debugLineHeader.addr + debugLineHeader.offset);
+    // elf_fpread(&elfloader, debug_section, debugHdr.length, debugLineHeader.addr + debugLineHeader.offset);
 
-    // create addr-line-file table
-    make_addr_line(&elfloader, debug_section, debugHdr.length);
+    // create addr-line-file array
+    make_addr_line(&elfloader, debug_section, debugLineHeader.size);
 }

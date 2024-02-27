@@ -1,6 +1,7 @@
 #include "kernel/riscv.h"
 #include "kernel/process.h"
 #include "spike_interface/spike_utils.h"
+#include <string.h>
 
 static void print_errorline();
 
@@ -10,11 +11,7 @@ static void handle_load_access_fault() { panic("Load access fault!"); }
 
 static void handle_store_access_fault() { panic("Store/AMO access fault!"); }
 
-static void handle_illegal_instruction()
-{
-  print_errorline();
-  panic("Illegal instruction!");
-}
+static void handle_illegal_instruction() { panic("Illegal instruction!"); }
 
 static void handle_misaligned_load() { panic("Misaligned Load!"); }
 
@@ -37,6 +34,7 @@ static void handle_timer()
 void handle_mtrap()
 {
   uint64 mcause = read_csr(mcause);
+  print_errorline();
   switch (mcause)
   {
   case CAUSE_MTIMER:
@@ -73,6 +71,38 @@ void handle_mtrap()
 
 static void print_errorline()
 {
+  char path[200], source_code[200], file_code[10000];
+  uint64 eaddr = read_csr(mepc);
+  // sprint("mepc:%x\n", read_csr(mepc));
+  for (int i = 0;; i++)
+  {
+    if (eaddr == current->line[i].addr)
+    {
+      strcpy(path, current->dir[current->file[current->line[i].file].dir]);
+      strcpy(path + strlen(path), "/");
+      strcpy(path + strlen(path), current->file[current->line[i].file].file);
+      sprint("Runtime error at %s:%d\n", path, current->line[i].line);
 
-  sprint("dir:%s\nline:%x %d %d\nfile:%s\n", current->dir[current->file[0].dir], current->line[0].addr, current->line[0].file, current->line[0].line, current->file[0].file);
+      // to find source code
+      int line = current->line[i].line, source_code_offset = 0;
+      spike_file_t *fp = spike_file_open(path, O_RDONLY, 0);
+      spike_file_read(fp, file_code, 10000);
+      while (--line)
+      {
+        while (file_code[source_code_offset++] != '\n')
+          ;
+      }
+      int i;
+      for (i = 0; file_code[source_code_offset] != '\n'; i++, source_code_offset++)
+      {
+        source_code[i] = file_code[source_code_offset];
+      }
+      source_code[i] = 0;
+      sprint("%s\n", source_code);
+
+      // sprint("line:%d\ndir:%s\nfile:%s", current->line[i].line, current->dir[current->file[current->line[i].file].dir], current->file[current->line[i].file].file);
+      break;
+    }
+  }
+  // sprint("dir:%s\nline:%x %d %d\nfile:%s\n", current->dir[current->file[0].dir], current->line[0].addr, current->line[0].file, current->line[0].line, current->file[0].file);
 }
