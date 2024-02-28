@@ -113,7 +113,7 @@ void m_start(uintptr_t hartid, uintptr_t dtb)
     counter++;
   }
 
-  // core sysc
+  // core synchrony
   sync_barrier(&counter, core_num);
 
   // sprint is also defined in spike_interface/spike_utils.c
