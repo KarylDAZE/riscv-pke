@@ -142,6 +142,9 @@ void m_start(uintptr_t hartid, uintptr_t dtb)
   // also enables interrupt handling in supervisor mode. added @lab1_3
   write_csr(sie, read_csr(sie) | SIE_SEIE | SIE_STIE | SIE_SSIE);
 
+  // init tp
+  write_tp(hartid);
+
   // init timing. added @lab1_3
   timerinit(hartid);
 
