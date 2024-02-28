@@ -24,12 +24,11 @@ static void handle_syscall(trapframe *tf)
   // IMPORTANT: return value should be returned to user app, or else, you will encounter
   // problems in later experiments!
   tf->regs.a0 = do_syscall(tf->regs.a0, tf->regs.a1, tf->regs.a2, tf->regs.a3, tf->regs.a4, tf->regs.a5, tf->regs.a6, tf->regs.a7);
-  // how to return to user app??
 }
 
 //
 // global variable that store the recorded "ticks". added @lab1_3
-static uint64 g_ticks = 0;
+static uint64 g_ticks[32] = {0};
 //
 // added @lab1_3
 //
@@ -39,7 +38,7 @@ void handle_mtimer_trap()
   // TODO (lab1_3): increase g_ticks to record this "tick", and then clear the "SIP"
   // field in sip register.
   // hint: use write_csr to disable the SIP_SSIP bit in sip.
-  g_ticks++;
+  g_ticks[current->trapframe->regs.tp]++;
   write_csr(sip, 0);
 }
 
