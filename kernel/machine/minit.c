@@ -96,8 +96,7 @@ void timerinit(uintptr_t hartid)
 //
 // m_start: machine mode C entry point.
 //
-int counter = 0,  // for sync
-    core_num = 2; // CPU cores amount
+int start_counter = 0; // for sync
 // initialized = 0, // 0 for HTIF not initialized
 void m_start(uintptr_t hartid, uintptr_t dtb)
 {
@@ -110,11 +109,11 @@ void m_start(uintptr_t hartid, uintptr_t dtb)
   if (0 == hartid)
   {
     init_dtb(dtb);
-    counter++;
+    start_counter++;
   }
 
   // core synchrony
-  sync_barrier(&counter, core_num);
+  sync_barrier(&start_counter, NCPU);
 
   // sprint is also defined in spike_interface/spike_utils.c
   sprint("In m_start, hartid:%d\n", hartid);

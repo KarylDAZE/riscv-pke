@@ -19,7 +19,7 @@ process user_app;
 void load_user_program(process *proc)
 {
   // USER_TRAP_FRAME is a physical address defined in kernel/config.h
-  proc->trapframe = (trapframe *)USER_TRAP_FRAME + 0x4000000 * read_tp();
+  proc->trapframe = (trapframe *)(USER_TRAP_FRAME + 0x4000000 * read_tp());
   memset(proc->trapframe, 0, sizeof(trapframe));
   // USER_KSTACK is also a physical address defined in kernel/config.h
   proc->kstack = USER_KSTACK + 0x4000000 * read_tp();
