@@ -97,7 +97,6 @@ void timerinit(uintptr_t hartid)
 // m_start: machine mode C entry point.
 //
 int start_counter = 0; // for sync
-// initialized = 0, // 0 for HTIF not initialized
 void m_start(uintptr_t hartid, uintptr_t dtb)
 {
   // init the spike file interface (stdin,stdout,stderr)
@@ -109,7 +108,6 @@ void m_start(uintptr_t hartid, uintptr_t dtb)
   if (0 == hartid)
   {
     init_dtb(dtb);
-    start_counter++;
   }
 
   // core synchrony

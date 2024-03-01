@@ -19,11 +19,11 @@ process user_app;
 void load_user_program(process *proc)
 {
   // USER_TRAP_FRAME is a physical address defined in kernel/config.h
-  proc->trapframe = (trapframe *)(USER_TRAP_FRAME + 0x4000000 * read_tp());
+  proc->trapframe = (trapframe *)(USER_TRAP_FRAME + 0x10000 * read_tp());
   memset(proc->trapframe, 0, sizeof(trapframe));
   // USER_KSTACK is also a physical address defined in kernel/config.h
-  proc->kstack = USER_KSTACK + 0x4000000 * read_tp();
-  proc->trapframe->regs.sp = USER_STACK + 0x4000000 * read_tp();
+  proc->kstack = USER_KSTACK + 0x10000 * read_tp();
+  proc->trapframe->regs.sp = USER_STACK + 0x10000 * read_tp();
   proc->trapframe->regs.tp = read_tp();
   // load_bincode_from_host_elf() is defined in kernel/elf.c
   load_bincode_from_host_elf(proc);

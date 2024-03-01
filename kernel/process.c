@@ -53,6 +53,5 @@ void switch_to(process *proc)
   write_csr(sepc, proc->trapframe->epc);
 
   // return_to_user() is defined in kernel/strap_vector.S. switch to user mode with sret.
-  sprint("%x %d\n", proc->trapframe->epc, proc->trapframe->regs.a0);
   return_to_user(proc->trapframe);
 }

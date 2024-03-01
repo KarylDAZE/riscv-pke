@@ -19,7 +19,7 @@
 //
 ssize_t sys_user_print(const char *buf, size_t n)
 {
-  sprint("hartid = %d 1324\n", read_tp());
+  sprint("hartid = %d 1324 sp:%x\n", read_tp(), read_sp());
   sprint("hartid = %d : %s buf_addr:%x\n", read_tp(), buf, buf);
   sprint("hartid = %d 1324\n", read_tp());
   return 0;
@@ -31,26 +31,24 @@ ssize_t sys_user_print(const char *buf, size_t n)
 int exit_counter = 0;
 ssize_t sys_user_exit(uint64 code)
 {
-  sprint("hartid = : User exit with code:%d.\n", code);
+  // sprint("%d %d\n", current[0]->trapframe->regs.tp, current[1]->trapframe->regs.tp);
+  sprint("hartid = %d: User exit with code:%d. epc:%x\n", read_tp(), code, current[read_tp()]->trapframe->epc);
   //  in lab1, PKE considers only one app (one process).
   //  therefore, shutdown the system when the app calls exit()
-  //  if (read_tp())
-  //    exit_counter++;
-  //  else
-  //  {
-  //  sync_barrier(&exit_counter, NCPU);
-  sprint("before:%d\n", read_tp());
-  if (!read_tp())
+  sync_barrier(&exit_counter, NCPU);
+  if (0 == read_tp())
   {
     sprint("hartid = %d: shutdown with code:%d.\n", read_tp(), code);
     shutdown(code);
   }
-  else
+  else if (1 == read_tp())
   {
-    sprint("hartid = %d wait\n", read_tp());
-    sync_barrier(&exit_counter, NCPU);
+    sprint("111\n");
   }
-  //}
+  while (1)
+  {
+    asm volatile("wfi");
+  }
   return 0;
 }
 
