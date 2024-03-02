@@ -40,30 +40,63 @@ ssize_t sys_user_exit(uint64 code)
 
 typedef struct mem_alloc_block
 {
-  uint64 offset;
+  int offset;
   size_t size;
   struct mem_alloc_block *next;
 } alloc_block;
-static alloc_block free_page_list = {0, 4096, 0};
-
+static alloc_block allocated_page_list_s = {4096, 0, NULL}, begin_block = {0, 0, NULL};
+static alloc_block *allocated_block_list = &allocated_page_list_s;
+static uint64 page_va = 0;
 //
 // maybe, the simplest implementation of malloc in the world ... added @lab2_2
 //
-uint64 sys_user_allocate_page(size_t size)
+uint64 sys_user_allocate_page(size_t alloc_size)
 {
-  // void *pa = alloc_page();
-  // uint64 va = g_ufree_page;
-  // g_ufree_page += PGSIZE;
-  // user_vm_map((pagetable_t)current->pagetable, va, PGSIZE, (uint64)pa,
-  //             prot_to_type(PROT_WRITE | PROT_READ, 1));
   // search every free block
-  alloc_block *block = &free_page_list;
-  do
-  {
-    // if the block is enough big to be allocated
-    block = block->next;
-  } while (block->next);
-  // return va;
+  alloc_block *block = allocated_block_list, *p_block = &begin_block;
+  if (page_va)
+    do
+    {
+      // if space is enough to allocate
+      // sprint("list: off:%d size:%d addr:%x next:%x\n", allocated_block_list->offset, allocated_block_list->size, allocated_block_list, allocated_block_list->next);
+      if (block->offset - p_block->offset - (int)p_block->size >= (int)alloc_size + (int)sizeof(alloc_block))
+      // insert a new block
+      {
+        alloc_block *new_block = (alloc_block *)ROUNDUP(current->heap_top, sizeof(alloc_block));
+        current->heap_top += alloc_size + sizeof(alloc_block);
+        p_block->next = new_block;
+        new_block->offset = p_block->offset + p_block->size;
+        new_block->next = block;
+        new_block->size = alloc_size;
+        if (block == allocated_block_list)
+          allocated_block_list = new_block;
+        // alloc_block *iblock = allocated_block_list;
+        // while (iblock)
+        // {
+        //   sprint("iblock: off:%d size:%d addr:%x next:%x\n", iblock->offset, iblock->size, iblock, iblock->next);
+        //   iblock = iblock->next;
+        // }
+
+        return page_va + new_block->offset;
+      }
+      p_block = block;
+      block = block->next;
+    } while (block);
+
+  //  allocate a new page
+  void *pa = alloc_page();
+  current->heap_top = (uint64)pa;
+  page_va = g_ufree_page;
+  g_ufree_page += PGSIZE;
+  user_vm_map((pagetable_t)current->pagetable, page_va, PGSIZE, (uint64)pa,
+              prot_to_type(PROT_WRITE | PROT_READ, 1));
+  alloc_block *new_block = (alloc_block *)current->heap_top;
+  current->heap_top += alloc_size + sizeof(alloc_block);
+  new_block->offset = 0;
+  new_block->size = alloc_size;
+  new_block->next = allocated_block_list;
+  allocated_block_list = new_block;
+  return page_va;
 }
 
 //
@@ -71,7 +104,34 @@ uint64 sys_user_allocate_page(size_t size)
 //
 uint64 sys_user_free_page(uint64 va)
 {
-  user_vm_unmap((pagetable_t)current->pagetable, va, PGSIZE, 1);
+  alloc_block *block = allocated_block_list, *p_block = allocated_block_list;
+  if (0 == allocated_block_list->size)
+    sprint("error free!\n");
+  if (page_va)
+    // search block to free
+    while (block)
+    {
+      if (page_va + block->offset == va)
+      {
+        // sprint("free va:%x\n", va);
+        if (block == allocated_block_list)
+        {
+          allocated_block_list = block->next;
+        }
+        else
+        {
+          p_block->next = block->next;
+        }
+        break;
+      }
+      p_block = block;
+      block = block->next;
+    }
+  if (NULL == allocated_block_list->next)
+  {
+    user_vm_unmap((pagetable_t)current->pagetable, page_va, PGSIZE, 1);
+    page_va = 0;
+  }
   return 0;
 }
 

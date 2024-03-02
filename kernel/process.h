@@ -26,10 +26,10 @@ typedef struct process_t
   uint64 kstack;
   // user page table
   pagetable_t pagetable;
-  // user heap offset
-  uint64 heap_offset;
-  // user heap size
-  uint64 heap_size;
+  // user heap top
+  uint64 heap_top;
+  // user heap bottom
+  uint64 heap_bottom;
   // trapframe storing the context of a (User mode) process.
   trapframe *trapframe;
 } process;
