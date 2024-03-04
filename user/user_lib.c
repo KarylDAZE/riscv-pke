@@ -89,7 +89,7 @@ void yield()
 //
 int sem_new(int value)
 {
-  return do_user_call(SYS_user_sem_P, value, 0, 0, 0, 0, 0, 0);
+  return do_user_call(SYS_user_sem_new, value, 0, 0, 0, 0, 0, 0);
 }
 
 //

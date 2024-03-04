@@ -109,7 +109,14 @@ ssize_t sys_user_yield()
 //
 ssize_t sys_user_sem_new(int value)
 {
-  return 0;
+  static int sem_index = 0; // index of next sem to allocate
+  if (sem_index < MAX_SEMS)
+  {
+    sems[sem_index] = value;
+  }
+  else
+    panic("semaphores exceeds the maximum limit");
+  return sem_index++;
 }
 
 //
@@ -117,14 +124,40 @@ ssize_t sys_user_sem_new(int value)
 //
 ssize_t sys_user_sem_P(int num)
 {
+  if (num >= MAX_SEMS || num < 0)
+    panic("sem_P arg error");
+  if (sems[num] == 0)
+  {
+    // wait for sem_V
+    current->status = BLOCKED;
+    current->isem = num;
+    schedule();
+  }
+  sems[num]--;
   return 0;
 }
 
 //
 // kerenl entry point of sem_V.
 //
+extern process procs[NPROC];
 ssize_t sys_user_sem_V(int num)
 {
+  if (num >= MAX_SEMS || num < 0)
+    panic("sem_V arg error");
+  ++sems[num];
+
+  for (int i = 0; i < NPROC; i++)
+  {
+    if (procs[i].status == BLOCKED && sems[procs[i].isem] > 0)
+    // sem>0,process wake up
+    {
+      sems[procs[i].isem]--;
+      procs[i].status = READY;
+      insert_to_ready_queue(&procs[i]);
+    }
+  }
+
   return 0;
 }
 
