@@ -110,7 +110,7 @@ void m_start(uintptr_t hartid, uintptr_t dtb)
     init_dtb(dtb);
   }
 
-  // core synchrony
+  //  core synchrony
   sync_barrier(&start_counter, NCPU);
 
   // sprint is also defined in spike_interface/spike_utils.c

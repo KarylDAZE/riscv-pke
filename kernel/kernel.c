@@ -10,7 +10,7 @@
 #include "spike_interface/spike_utils.h"
 
 // process is a structure defined in kernel/process.h
-process user_app;
+process user_app[32];
 
 //
 // load the elf, and construct a "process" (with only a trapframe).
@@ -18,13 +18,14 @@ process user_app;
 //
 void load_user_program(process *proc)
 {
+  uint64 tp = read_tp();
   // USER_TRAP_FRAME is a physical address defined in kernel/config.h
-  proc->trapframe = (trapframe *)(USER_TRAP_FRAME + 0x10000 * read_tp());
+  proc->trapframe = (trapframe *)(USER_TRAP_FRAME + 0x4000000 * tp);
   memset(proc->trapframe, 0, sizeof(trapframe));
   // USER_KSTACK is also a physical address defined in kernel/config.h
-  proc->kstack = USER_KSTACK + 0x10000 * read_tp();
-  proc->trapframe->regs.sp = USER_STACK + 0x10000 * read_tp();
-  proc->trapframe->regs.tp = read_tp();
+  proc->kstack = USER_KSTACK + 0x4000000 * tp;
+  proc->trapframe->regs.sp = USER_STACK + 0x4000000 * tp;
+  proc->trapframe->regs.tp = tp;
   // load_bincode_from_host_elf() is defined in kernel/elf.c
   load_bincode_from_host_elf(proc);
 }
@@ -34,7 +35,8 @@ void load_user_program(process *proc)
 //
 int s_start(void)
 {
-  sprint("hartid = %d: Enter supervisor mode...\n", read_tp());
+  int tp = read_tp();
+  sprint("hartid = %d: Enter supervisor mode...\n", tp);
   // Note: we use direct (i.e., Bare mode) for memory mapping in lab1.
   // which means: Virtual Address = Physical Address
   // therefore, we need to set satp to be 0 for now. we will enable paging in lab2_x.
@@ -43,11 +45,11 @@ int s_start(void)
   write_csr(satp, 0);
 
   // the application code (elf) is first loaded into memory, and then put into execution
-  load_user_program(&user_app);
+  load_user_program(&user_app[tp]);
 
-  sprint("hartid = %d: Switch to user mode...\n", read_tp());
+  sprint("hartid = %d: Switch to user mode...\n", tp);
   // switch_to() is defined in kernel/process.c
-  switch_to(&user_app);
+  switch_to(&user_app[tp]);
 
   // we should never reach here.
   return 0;
