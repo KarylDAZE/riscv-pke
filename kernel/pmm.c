@@ -59,9 +59,9 @@ void free_page(void *pa)
 //
 void *alloc_page(void)
 {
-  list_node *n = g_free_mem_list.next;
-  uint64 hartid = 0;
   spin_lock(&mem_lock);
+  list_node *n = g_free_mem_list.next;
+  uint64 hartid = read_tp();
   if (vm_alloc_stage[hartid])
   {
     sprint("hartid = %ld: alloc page 0x%x\n", hartid, n);
@@ -78,6 +78,7 @@ void spin_lock(int *lock)
   // use amoswap to implement spin lock
   while (lock_flag)
   {
+    // sprint("waiting");
     asm volatile("amoswap.w %0,%0,(%1)\n"
                  : "+r"(lock_flag), "+r"(lock)
                  :

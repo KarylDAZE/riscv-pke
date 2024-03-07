@@ -117,7 +117,8 @@ int s_start(void)
 
   sprint("hartid = %d: Switch to user mode...\n", hartid);
 
-  vm_alloc_stage[0] = 1;
+  for (size_t i = 0; i < NCPU; i++)
+    vm_alloc_stage[i] = 1;
   // switch_to() is defined in kernel/process.c
   switch_to(&user_app[hartid]);
 
