@@ -32,17 +32,17 @@ static void handle_syscall(trapframe *tf)
 
 //
 // global variable that store the recorded "ticks". added @lab1_3
-static uint64 g_ticks = 0;
+static uint64 g_ticks[32] = {0};
 //
 // added @lab1_3
 //
 void handle_mtimer_trap()
 {
-  sprint("Ticks %d\n", g_ticks);
+  sprint("Ticks %d\n", g_ticks[read_tp()]);
   // TODO (lab1_3): increase g_ticks to record this "tick", and then clear the "SIP"
   // field in sip register.
   // hint: use write_csr to disable the SIP_SSIP bit in sip.
-  g_ticks++;
+  g_ticks[read_tp()]++;
   write_csr(sip, 0);
 }
 
@@ -65,7 +65,7 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval)
     {
       void *pa = alloc_page();
       // sprint("%llx,%llx\n", stval, (uint64)pa);
-      map_pages(current->pagetable, stval & 0xfffffffff000, PGSIZE, (uint64)pa, prot_to_type(PROT_READ | PROT_WRITE, 1));
+      map_pages(current[read_tp()]->pagetable, stval & 0xfffffffff000, PGSIZE, (uint64)pa, prot_to_type(PROT_READ | PROT_WRITE, 1));
     }
     break;
   default:
@@ -80,14 +80,15 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval)
 //
 void smode_trap_handler(void)
 {
+  uint64 hartid = read_tp();
   // make sure we are in User mode before entering the trap handling.
   // we will consider other previous case in lab1_3 (interrupt).
   if ((read_csr(sstatus) & SSTATUS_SPP) != 0)
     panic("usertrap: not from user mode");
 
-  assert(current);
+  assert(current[hartid]);
   // save user process counter.
-  current->trapframe->epc = read_csr(sepc);
+  current[hartid]->trapframe->epc = read_csr(sepc);
 
   // if the cause of trap is syscall from user application.
   // read_csr() and CAUSE_USER_ECALL are macros defined in kernel/riscv.h
@@ -97,7 +98,7 @@ void smode_trap_handler(void)
   switch (cause)
   {
   case CAUSE_USER_ECALL:
-    handle_syscall(current->trapframe);
+    handle_syscall(current[hartid]->trapframe);
     break;
   case CAUSE_MTIMER_S_TRAP:
     handle_mtimer_trap();
@@ -116,5 +117,5 @@ void smode_trap_handler(void)
   }
 
   // continue (come back to) the execution of current process.
-  switch_to(current);
+  switch_to(current[hartid]);
 }
