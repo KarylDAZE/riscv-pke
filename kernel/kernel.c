@@ -10,6 +10,7 @@
 #include "vmm.h"
 #include "memlayout.h"
 #include "spike_interface/spike_utils.h"
+#include "sync_utils.h"
 
 // process is a structure defined in kernel/process.h
 process user_app[32];
@@ -84,6 +85,7 @@ void load_user_program(process *proc)
 //
 // s_start: S-mode entry point of riscv-pke OS kernel.
 //
+int mem_init_counter = 0;
 int s_start(void)
 {
   uint64 hartid = read_tp();
@@ -93,11 +95,17 @@ int s_start(void)
   // note, the code still works in Bare mode when calling pmm_init() and kern_vm_init().
   write_csr(satp, 0);
 
-  // init phisical memory manager
-  pmm_init();
+  if (0 == hartid)
+  {
+    // init phisical memory manager
+    pmm_init();
 
-  // build the kernel page table
-  kern_vm_init();
+    // build the kernel page table
+    kern_vm_init();
+  }
+
+  //  core synchrony
+  sync_barrier(&mem_init_counter, NCPU);
 
   // now, switch to paging mode by turning on paging (SV39)
   enable_paging();
