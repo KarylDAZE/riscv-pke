@@ -227,7 +227,7 @@ int do_fork(process *parent)
           // memcpy(child_pa, (void *)lookup_pa(parent->pagetable, heap_block), PGSIZE);
           void *parent_pa = (void *)lookup_pa(parent->pagetable, heap_block);
           user_vm_map((pagetable_t)child->pagetable, heap_block, PGSIZE, (uint64)parent_pa,
-                      prot_to_type(PROT_READ, 1));
+                      prot_to_type(PROT_READ | PROT_COPY_ON_WRITE, 1));
         }
 
         child->mapped_info[HEAP_SEGMENT].npages = parent->mapped_info[HEAP_SEGMENT].npages;
