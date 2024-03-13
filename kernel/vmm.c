@@ -10,6 +10,7 @@
 #include "util/string.h"
 #include "spike_interface/spike_utils.h"
 #include "util/functions.h"
+#include "string.h"
 
 /* --- utility functions for virtual address mapping --- */
 //
@@ -27,7 +28,16 @@ int map_pages(pagetable_t page_dir, uint64 va, uint64 size, uint64 pa, int perm)
     if ((pte = page_walk(page_dir, first, 1)) == 0)
       return -1;
     if (*pte & PTE_V)
-      panic("map_pages fails on mapping va (0x%lx) to pa (0x%lx)", first, pa);
+    {
+      if (*pte & PTE_C)
+      // copy on write
+      {
+        void *prot_pa = (void *)lookup_pa(current->pagetable, va);
+        memcpy((void *)pa, prot_pa, PGSIZE);
+      }
+      else
+        panic("map_pages fails on mapping va (0x%lx) to pa (0x%lx)", first, pa);
+    }
     *pte = PA2PTE(pa) | perm | PTE_V;
   }
   return 0;
