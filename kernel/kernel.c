@@ -25,7 +25,8 @@ extern char trap_sec_start[];
 //
 // turn on paging. added @lab2_1
 //
-void enable_paging() {
+void enable_paging()
+{
   // write the pointer to kernel page (table) directory into the CSR of "satp".
   write_csr(satp, MAKE_SATP(g_kernel_pagetable));
 
@@ -37,20 +38,25 @@ void enable_paging() {
 // load the elf, and construct a "process" (with only a trapframe).
 // load_bincode_from_host_elf is defined in elf.c
 //
-process* load_user_program() {
-  process* proc;
+process *load_user_program()
+{
+  process *proc;
+  arg_buf arg_bug_msg;
 
   proc = alloc_process();
   sprint("User application is loading.\n");
-
-  load_bincode_from_host_elf(proc);
+  size_t argc = parse_args(&arg_bug_msg);
+  if (!argc)
+    panic("You need to specify the application program!\n");
+  load_bincode_from_host_elf(proc, arg_bug_msg.argv[0]);
   return proc;
 }
 
 //
 // s_start: S-mode entry point of riscv-pke OS kernel.
 //
-int s_start(void) {
+int s_start(void)
+{
   sprint("Enter supervisor mode...\n");
   // in the beginning, we use Bare mode (direct) memory mapping as in lab1.
   // but now, we are going to switch to the paging mode @lab2_1.
@@ -77,7 +83,7 @@ int s_start(void) {
   sprint("Switch to user mode...\n");
   // the application code (elf) is first loaded into memory, and then put into execution
   // added @lab3_1
-  insert_to_ready_queue( load_user_program() );
+  insert_to_ready_queue(load_user_program());
   schedule();
 
   // we should never reach here.
