@@ -166,7 +166,6 @@ struct file *vfs_open(const char *path, int flags)
     }
   }
 
-  sprint("type:%d\n", file_dentry->dentry_inode->type);
   if (file_dentry->dentry_inode->type != FILE_I)
   {
     sprint("vfs_open: cannot open a directory!\n");

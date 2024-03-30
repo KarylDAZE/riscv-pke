@@ -251,7 +251,6 @@ ssize_t sys_user_exec(char *pathva)
   char *pathpa = (char *)user_va_to_pa((pagetable_t)(current->pagetable), pathva);
   for (int i = 0; i < current->total_mapped_region; i++)
   {
-    sprint("123\n");
     if (current->mapped_info[i].seg_type == CODE_SEGMENT || current->mapped_info[i].seg_type == DATA_SEGMENT || current->mapped_info[i].seg_type == STACK_SEGMENT)
     {
       for (int j = 0; j < current->mapped_info[i].npages; j++)
